@@ -8,6 +8,11 @@ typedef struct {
 	int y;
 } vec2;
 
+typedef struct {
+	vec2 pos;
+	int	value;
+	int	revealed;
+} cell;
 vec2 randompos(vec2 board)
 {
 	vec2 pos;
@@ -15,7 +20,6 @@ vec2 randompos(vec2 board)
 	pos.y = (rand() % board.y);
 	return (pos);
 }
-
 int	isbomb(int x, int y, vec2 *bombs)
 {
 	int	i = 0;
@@ -27,18 +31,72 @@ int	isbomb(int x, int y, vec2 *bombs)
 	}
 	return (0);
 }
-int	isrevealed(int x, int y, vec2 *revealed)
+int	getboardindex(int x, int y, board, boardsize)
 {
-	int	i = 0;
-	while (revealed[i].x != -1)
+	maxindex = (boardsize.x * 2) * boardsize.y;
+	while (i < maxindex)
 	{
-		if (x == revealed[i].x && y == revealed[i].y)
-			return (1);
+		if (x == board[i].pos.x && y == board[i].pos.y)
+			return (i);
 		i++;
 	}
-	return (0);
+	return (-1);
 }
-vec2 *drawbombs(int numbombs, vec2 board)
+//check near bombs
+int checkbombs(int x, int y, vec2 *bombs)
+{
+	int numbomb = 0;
+	if (isbomb(x - 2, y - 1, bombs))
+		numbomb++;
+	if (isbomb(x, y - 1, bombs))
+		numbomb++;
+	if (isbomb(x + 2, y - 1, bombs))
+		numbomb++;
+	if (isbomb(x - 2 , y, bombs))
+		numbomb++;
+	if (isbomb(x + 2, y, bombs))
+		numbomb++;
+	if (isbomb(x - 2, y + 1, bombs))
+		numbomb++;
+	if (isbomb(x, y + 1, bombs))
+		numbomb++;
+	if (isbomb(x + 2, y + 1, bombs))
+		numbomb++;
+	return (numbomb);
+}
+cell *fillboard(vec2 boardsize, vec2 *bombs)
+{
+	int i = 0;
+	int x;
+	int maxsize = (boardsize.x * 2) * boardsize.y;
+	cell *board = (cell *)malloc(sizeof(cell) * (maxsize + 1));
+	if (!board)
+		return (NULL);
+	while (i < maxsize)
+	{
+		int y = 0;
+		while(y < boardsize.y)
+		{
+			x = 0;
+			while(x < (boardsize.x * 2))
+			{
+				board[i].pos.x = x;
+				board[i].pos.y = y;
+				if (isbomb(x, y, bombs))
+					board[i].value = -1;
+				else
+					board[i].value = checkbombs(x, y, bombs);
+				board[i].revealed = 0;
+				i++;
+				x++;
+			}
+			y++;
+		}
+	}
+	return (board);
+}
+
+vec2 *generatebombs(int numbombs, vec2 board)
 {
 	int i = 0;
 	vec2 pos;
@@ -49,7 +107,7 @@ vec2 *drawbombs(int numbombs, vec2 board)
 	while (i < numbombs)
 	{
 		pos = randompos(board);
-		while (isbomb(pos.x, pos.y, bombs))
+		while (isbomb(pos.x, pos.y, bombs)) //Ensures it doenst generate a bomb on a previously generated one
 			pos = randompos(board);
 		bombs[i] = pos;
 		printf("Bomb generated! x: %d, y: %d\n", bombs[i].x /2, bombs[i].y);
@@ -60,31 +118,25 @@ vec2 *drawbombs(int numbombs, vec2 board)
 	return (bombs);
 }
 
-void drawboard(vec2 board, vec2 playerpos, vec2 *revealed,vec2 *bombs)
+void drawboard(cell *board, vec2 boardsize, vec2 playerpos)
 {
-	int x;
-	int y;
-	y = 0;
-	char boardchar = '#';
-	char reveal = '$';
-	char playerchar = '@';
+	int	i = 0;
+	int	maxsize = (boardsize.x * 2) * boardsize.y;
 	char printchar = '#';
-	//for some reason x and y are inverted
-	while (y < board.y)
+
+	while(i < maxsize)
 	{
-		x = 0;
-		while (x < board.x * 2)
-		{
-			if(x == playerpos.x && y == playerpos.y)
-				printchar = playerchar;
-			else if (isrevealed(x, y, revealed))
-				printchar = reveal;
-			else
-				printchar = boardchar;
-			mvaddch(y, x++, printchar);
-			mvaddch(y, x++, ' ');
-		}
-		y++;
+		if (board[i].pos.x == playerpos.x && board[i].pos.y == playerpos.y )
+			printchar = '@';
+		else if (board[i].revealed == 1)
+			printchar = board[i].value + '0';
+		else
+			printchar = '#';
+		if (board[i].pos.x % 2 == 0)
+			mvaddch(board[i].pos.y, (board[i].pos.x), printchar);
+		else
+			mvaddch(board[i].pos.y, (board[i].pos.x), ' ');
+		i++;
 	}
 	refresh();
 }
@@ -99,27 +151,24 @@ int	main(int ac, char **av)
 	//randomize the game!
 	srand(time(NULL));
 	int	numbombs = atoi(av[3]);
-	vec2 board = {atoi(av[1]), atoi(av[2])};
+	vec2 boardsize = {atoi(av[1]), atoi(av[2])};
 	vec2 playerpos = {0, 0};
 
-	if (numbombs >= (board.x * board.y))
+	if (numbombs >= (boardsize.x * boardsize.y))
 	{
 		printf("Cannot generate too many bombs, please keep beetween x and y boundaries!!!\n");
 		return (0);
 	}
-	vec2 *revealed = (vec2 *)malloc(sizeof(vec2) * ((board.x * 2) * board.y) + 1 );
-	if (!revealed)
-		return (0);
-	revealed[0].x = -1;
 	//generate number of bombs!
-	vec2 *bombs = drawbombs(numbombs, board);
+	vec2 *bombs = generatebombs(numbombs, boardsize);
 	if (!bombs)
 	{
-		free(revealed);
 		return (0);
 	}
-	int	screen_width = board.x * 2;
-	int	screen_height = board.y;
+	cell *board = fillboard(boardsize, bombs);
+
+	int	screen_width = boardsize.x * 2;
+	int	screen_height = boardsize.y;
 	WINDOW *win = initscr();
 
 	keypad(win, true);
@@ -127,42 +176,43 @@ int	main(int ac, char **av)
 	curs_set(0);
 	noecho();
 	clear();
-	int bombsi = 0;
+	int i = 0;
+	int mapfound;
 	while (true)
 	{
 		int pressed = wgetch(win);
 		if ((pressed == 'a' || pressed == 'A') && playerpos.x > 0)
 			playerpos.x += -2;
-		if ((pressed == 'd' || pressed == 'D' ) && playerpos.x < (board.x * 2) - 2)
+		if ((pressed == 'd' || pressed == 'D' ) && playerpos.x < (boardsize.x * 2) - 2)
 			playerpos.x += 2;
-		if ((pressed == 's' || pressed == 'S' ) && playerpos.y < board.y - 1)
+		if ((pressed == 's' || pressed == 'S' ) && playerpos.y < boardsize.y - 1)
 			playerpos.y += 1;
 		if ((pressed == 'w' || pressed == 'W') && playerpos.y > 0)
 			playerpos.y += -1;
-		if (pressed == 32)
+		if (pressed == 32 || pressed == KEY_ENTER)
 		{
-			if (isbomb(playerpos.x, playerpos.y, bombs))
-			{
+			i = getboardindex(playerpos.x, playerpos.y, board, boardsize);
+			if (board[i].value == -1)
 				printf("KABOOOOM, you lost hahaha!!!");
 				break;
-			}
-			else if (!isrevealed(playerpos.x, playerpos.y, revealed))
+			else if (board[i].revealed = 0)
 			{
-				revealed[bombsi] = playerpos;
-				bombsi++;
-				revealed[bombsi].x = -1;
-				if (bombsi == (board.x * board.y - numbombs))
-				{
-					printf("Whaaaaaaat? You won??? Congratulations!");
-					break;
-				}
+				board[i].revealed = 1;
+				mapfound++;
+				if (mapfound == (boardsize.x * boardsize.y) - numbombs)
+					printf("Whaaaat?, you won? Congratulations!!!");
+				break;
 			}
+
+
+
 		}
-		drawboard(board, playerpos, revealed, bombs);
+		drawboard(board, boardsize, playerpos);
 		refresh();
+		usleep(1000); //to not overload the cpu
 	}
 	free(bombs);
-	free(revealed);
+	free(board);
 	endwin();
 	return (0);
 
