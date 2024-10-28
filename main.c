@@ -96,6 +96,7 @@ int	main(int ac, char **av)
 		printf("Board Needs a X, and Y and a number of bombs! \nexample: ./game 10 10 5\n");
 		return (0);
 	}
+	//randomize the game!
 	srand(time(NULL));
 	int	numbombs = atoi(av[3]);
 	vec2 board = {atoi(av[1]), atoi(av[2])};
