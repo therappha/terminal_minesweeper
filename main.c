@@ -15,6 +15,7 @@ vec2 randompos(vec2 board)
 	pos.y = (rand() % board.y);
 	return (pos);
 }
+
 int	isbomb(int x, int y, vec2 *bombs)
 {
 	int	i = 0;
@@ -111,6 +112,11 @@ int	main(int ac, char **av)
 	revealed[0].x = -1;
 	//generate number of bombs!
 	vec2 *bombs = drawbombs(numbombs, board);
+	if (!bombs)
+	{
+		free(revealed);
+		return (0);
+	}
 	int	screen_width = board.x * 2;
 	int	screen_height = board.y;
 	WINDOW *win = initscr();
@@ -137,8 +143,7 @@ int	main(int ac, char **av)
 			if (isbomb(playerpos.x, playerpos.y, bombs))
 			{
 				printf("KABOOOOM, you lost hahaha!!!");
-				endwin();
-				return (0);
+				break;
 			}
 			else if (!isrevealed(playerpos.x, playerpos.y, revealed))
 			{
@@ -148,13 +153,16 @@ int	main(int ac, char **av)
 				if (bombsi == (board.x * board.y - numbombs))
 				{
 					printf("Whaaaaaaat? You won??? Congratulations!");
-					endwin();
-					return (0);
+					break;
 				}
 			}
 		}
 		drawboard(board, playerpos, revealed, bombs);
 		refresh();
 	}
+	free(bombs);
+	free(revealed);
+	endwin();
 	return (0);
+
 }
