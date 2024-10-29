@@ -6,7 +6,9 @@ all:
 	cc main.c -lncurses -o game
 	@echo "${GREEN}Project built!${RESET}"
 	@echo "${GREEN}Please use${RESET} ${YELLOW}./game <board size x> <board size y> <number of bombs>${RESET}"
-	@echo "Play with ${YELLOW}'WASD'${RESET} and select slot with ${YELLOW}'SPACE'${RESET}"
+	@echo "Play with ${YELLOW}'WASD'${RESET} and select with ${YELLOW}'SPACE'${RESET}"
+	@echo "you can press ${YELLOW}'F'${RESET} to mark ${YELLOW}'bombs!'${RESET}"
+
 
 clean:
 	rm -rf game
