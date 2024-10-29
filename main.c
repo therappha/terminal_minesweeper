@@ -31,9 +31,10 @@ int	isbomb(int x, int y, vec2 *bombs)
 	}
 	return (0);
 }
-int	getboardindex(int x, int y, board, boardsize)
+int	getboardindex(int x, int y, cell *board, vec2 boardsize)
 {
-	maxindex = (boardsize.x * 2) * boardsize.y;
+	int	i = 0;
+	int maxindex = (boardsize.x * 2) * boardsize.y;
 	while (i < maxindex)
 	{
 		if (x == board[i].pos.x && y == board[i].pos.y)
@@ -46,22 +47,18 @@ int	getboardindex(int x, int y, board, boardsize)
 int checkbombs(int x, int y, vec2 *bombs)
 {
 	int numbomb = 0;
-	if (isbomb(x - 2, y - 1, bombs))
-		numbomb++;
-	if (isbomb(x, y - 1, bombs))
-		numbomb++;
-	if (isbomb(x + 2, y - 1, bombs))
-		numbomb++;
-	if (isbomb(x - 2 , y, bombs))
-		numbomb++;
-	if (isbomb(x + 2, y, bombs))
-		numbomb++;
-	if (isbomb(x - 2, y + 1, bombs))
-		numbomb++;
-	if (isbomb(x, y + 1, bombs))
-		numbomb++;
-	if (isbomb(x + 2, y + 1, bombs))
-		numbomb++;
+	  vec2 direction[8] = {
+        {-2, -1}, {0, -1}, {+2, -1},
+        {-2,  0},         {+2,  0},
+        {-2, +1}, {0, +1}, {+2, +1}
+	};
+	int i = 0;
+	while (i < 8)
+	{
+		if (isbomb(x + direction[i].x, y + direction[i].y, bombs))
+			numbomb++;
+		i++;
+	}
 	return (numbomb);
 }
 cell *fillboard(vec2 boardsize, vec2 *bombs)
@@ -130,8 +127,11 @@ void drawboard(cell *board, vec2 boardsize, vec2 playerpos)
 			printchar = '@';
 		else if (board[i].revealed == 1)
 			printchar = board[i].value + '0';
+		else if (board[i].revealed == 2)
+			printchar = '$';
 		else
 			printchar = '#';
+
 		if (board[i].pos.x % 2 == 0)
 			mvaddch(board[i].pos.y, (board[i].pos.x), printchar);
 		else
@@ -189,23 +189,41 @@ int	main(int ac, char **av)
 			playerpos.y += 1;
 		if ((pressed == 'w' || pressed == 'W') && playerpos.y > 0)
 			playerpos.y += -1;
+		if (pressed == '\e')
+			break;
+		if ((pressed == 'f') || pressed == 'F')
+		{
+			i = getboardindex(playerpos.x, playerpos.y, board, boardsize);
+			if (board[i].revealed == 0)
+			{
+				board[i].revealed = 2;
+			}
+			else if (board[i].revealed == 2)
+			{
+				board[i].revealed = 0;
+			}
+		}
 		if (pressed == 32 || pressed == KEY_ENTER)
 		{
 			i = getboardindex(playerpos.x, playerpos.y, board, boardsize);
-			if (board[i].value == -1)
-				printf("KABOOOOM, you lost hahaha!!!");
-				break;
-			else if (board[i].revealed = 0)
+			//printf("x: %d, y: %d\n", board[i].pos.x, board[i].pos.y);
+			if (board[i].revealed != 2)
+				if (board[i].value == -1)
+				{
+					printf("KABOOOOM, you lost hahaha!!!");
+					break;
+				}
+			if (board[i].revealed == 0)
 			{
 				board[i].revealed = 1;
 				mapfound++;
 				if (mapfound == (boardsize.x * boardsize.y) - numbombs)
+				{
 					printf("Whaaaat?, you won? Congratulations!!!");
-				break;
+					break;
+				}
+
 			}
-
-
-
 		}
 		drawboard(board, boardsize, playerpos);
 		refresh();
