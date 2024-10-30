@@ -1,4 +1,4 @@
-# terminal_minesweeper
+# 💣 terminal_minesweeper 💣
 Version 1 of a Small minesweeper for linux terminal I made using curses library while taking a break from 42 projects!
 usage:
 ```bash
