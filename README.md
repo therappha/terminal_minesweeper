@@ -1,5 +1,5 @@
 # 💣 terminal_minesweeper 💣
-Version 1 of a Small minesweeper for linux terminal I made using curses library while taking a break from 42 projects!
+small minesweeper game for terminal I made using curses library while taking a break from 42 projects!
 usage:
 ```bash
 make
