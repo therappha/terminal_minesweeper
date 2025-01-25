@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+
 typedef struct {
 	int x;
 	int y;
@@ -20,6 +21,7 @@ vec2 randompos(vec2 board)
 	pos.y = (rand() % board.y);
 	return (pos);
 }
+int	reveal(int currentposx, int currentposy, vec2 boardsize, cell *board, vec2 *bombs, int flood_size);
 int	isbomb(int x, int y, vec2 *bombs)
 {
 	int	i = 0;
@@ -215,8 +217,11 @@ int	main(int ac, char **av)
 				}
 			if (board[i].revealed == 0)
 			{
-				board[i].revealed = 1;
-				mapfound++;
+				mapfound += reveal(playerpos.x, playerpos.y, boardsize, board, bombs, 7);
+
+					board[i].revealed = 1;
+					mapfound++;
+
 				if (mapfound == (boardsize.x * boardsize.y) - numbombs)
 				{
 					printf("Whaaaat?, you won? Congratulations!!!");
@@ -233,5 +238,32 @@ int	main(int ac, char **av)
 	free(board);
 	endwin();
 	return (0);
+
+}
+
+int	reveal(int currentposx, int currentposy, vec2 boardsize, cell *board, vec2 *bombs, int flood_size)
+{
+	int	mapfound = 0;
+
+	vec2 direction[4] = {
+         {0, -1}, {-2,  0}, {+2,  0}, {0, +1},
+	};
+	int j = 0;
+	int i = getboardindex(currentposx, currentposy, board, boardsize);
+	if (i != -1 && board[i].revealed == 0 && board[i].value != -1 && flood_size > 0 )
+	//&& currentposx >= 0 && currentposx <= boardsize.x * 2 && currentposy >= 0 && currentposy <= boardsize.y)
+	{
+		board[i].revealed = 1;
+		mapfound++;
+		if (board[i].value == 0)
+		{
+			while (j < 4)
+			{
+				mapfound += reveal(currentposx + direction[j].x, currentposy + direction[j].y, boardsize, board, bombs, flood_size -1);
+				j++;
+			}
+		}
+	}
+	return (mapfound);
 
 }
